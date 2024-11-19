@@ -104,9 +104,11 @@ class ChatController extends GetxController {
       } else {
         stegoImage = file;
       }
+      String timeStamp = DateTime.now().millisecondsSinceEpoch.toString();
+      String uniquePath = 'images/$currentUserId/$timeStamp.png';
 
-      String fileName = stegoImage.path.split('/').last;
-      Reference ref = FirebaseStorage.instance.ref().child('images/$fileName');
+      Reference ref =
+          FirebaseStorage.instance.ref().child('images/$uniquePath');
       await ref.putFile(stegoImage);
 
       String downloadUrl = await ref.getDownloadURL();
