@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "681678412464",
+    "project_id": "kriptografi-a6ce3",
+    "storage_bucket": "kriptografi-a6ce3.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:681678412464:android:2292f22143edf654aff975",
+        "android_client_info": {
+          "package_name": "com.example.fp_kriptografi"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBEehh7U3wJG9p4N-is6muhn72R_PycaNg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
