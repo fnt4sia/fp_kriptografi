@@ -50,12 +50,12 @@ class ChatPage extends StatelessWidget {
                   itemBuilder: (context, index) {
                     final message = controller.messages[index];
                     final isCurrentUser =
-                        message['senderId'] == controller.currentUserId;
+                        message['senderId'] == controller.currentUserId.value;
 
                     return Align(
                       alignment: isCurrentUser
-                          ? Alignment.centerLeft
-                          : Alignment.centerRight,
+                          ? Alignment.centerRight
+                          : Alignment.centerLeft,
                       child: Container(
                         padding: const EdgeInsets.all(10.0),
                         margin: const EdgeInsets.symmetric(
