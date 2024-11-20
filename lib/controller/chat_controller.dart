@@ -1,6 +1,8 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
@@ -8,6 +10,7 @@ import 'package:fp_kriptografi/shared/utils/crpyto_utils.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class ChatController extends GetxController {
   final Rx<TextEditingController> messageController =
@@ -40,11 +43,14 @@ class ChatController extends GetxController {
         final data = doc.data();
         return {
           'senderId': data['senderId'],
-          'content': data['content'],
+          'content': data['type'] == "text"
+              ? CrpytoUtils.superCipher(data['content'], false)
+              : data['content'],
           'timestamp': data['timestamp'],
           'type': data['type'],
           'hasMessage':
               data.containsKey('hasMessage') ? data['hasMessage'] : false,
+          'fileName': data.containsKey('fileName') ? data['fileName'] : '',
         };
       }).toList();
     });
@@ -55,6 +61,9 @@ class ChatController extends GetxController {
 
     if (messageController.value.text.trim().isEmpty) return;
 
+    String encryptedMessage =
+        CrpytoUtils.superCipher(messageController.value.text, true);
+
     await firestore
         .collection('chats')
         .doc(chatId.value)
@@ -62,7 +71,7 @@ class ChatController extends GetxController {
         .add(
       {
         'senderId': currentUserId.value,
-        'content': messageController.value.text.trim(),
+        'content': encryptedMessage,
         'timestamp': FieldValue.serverTimestamp(),
         'type': 'text',
       },
@@ -70,7 +79,7 @@ class ChatController extends GetxController {
 
     await firestore.collection('chats').doc(chatId.value).set(
       {
-        'lastMessage': messageController.value.text.trim(),
+        'lastMessage': encryptedMessage,
         'lastMessageTimestamp': FieldValue.serverTimestamp(),
       },
       SetOptions(merge: true),
@@ -81,8 +90,61 @@ class ChatController extends GetxController {
 
   Future<void> sendFile() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles();
-    if (result != null) {
-      // File file = File(result.files.single.path!);
+    if (result != null && result.files.single.path != null) {
+      try {
+        File file = File(result.files.single.path!);
+
+        String originalFileName = result.files.single.name;
+
+        String encryptedFileName =
+            '${DateTime.now().millisecondsSinceEpoch}.txt';
+
+        List<int> fileBytes = await file.readAsBytes();
+
+        List<int> encryptedBytes = CrpytoUtils.encryptByes(fileBytes);
+
+        String base64Encrypted = base64Encode(encryptedBytes);
+
+        final tempDir = await getTemporaryDirectory();
+        String tempPath = '${tempDir.path}/$encryptedFileName';
+        File encryptedFile = File(tempPath);
+        await encryptedFile.writeAsString(base64Encrypted);
+
+        Reference ref =
+            FirebaseStorage.instance.ref().child('files/$encryptedFileName');
+        UploadTask uploadTask = ref.putFile(encryptedFile);
+        await uploadTask.whenComplete(() => null);
+
+        await encryptedFile.delete();
+
+        String fileUrl = await ref.getDownloadURL();
+
+        await FirebaseFirestore.instance
+            .collection('chats')
+            .doc(chatId.value)
+            .collection('messages')
+            .add({
+          'senderId': currentUserId.value,
+          'content': fileUrl,
+          'fileName': originalFileName,
+          'encryptedFileName': encryptedFileName,
+          'type': 'file',
+          'timestamp': FieldValue.serverTimestamp(),
+        });
+
+        await FirebaseFirestore.instance
+            .collection('chats')
+            .doc(chatId.value)
+            .set(
+          {
+            'lastMessage': "File",
+            'lastMessageTimestamp': FieldValue.serverTimestamp(),
+          },
+          SetOptions(merge: true),
+        );
+      } catch (e) {
+        Get.snackbar('Error', 'Failed to send file');
+      }
     }
   }
 
@@ -159,9 +221,46 @@ class ChatController extends GetxController {
         return '';
       }
     } catch (e) {
-      print("error disini bang : receive image");
-      print(e.toString());
       return '';
+    }
+  }
+
+  Future<void> downloadFile(String url, String fileName) async {
+    try {
+      if (Platform.isAndroid) {
+        var status = await Permission.storage.status;
+        if (!status.isGranted) {
+          await Permission.storage.request();
+        }
+      }
+
+      Directory directory;
+      if (Platform.isAndroid) {
+        directory = (await getExternalStorageDirectory())!;
+      } else {
+        directory = await getApplicationDocumentsDirectory();
+      }
+
+      String encryptedFileName = '${DateTime.now().millisecondsSinceEpoch}.txt';
+      String encryptedFilePath = '${directory.path}/$encryptedFileName';
+      String decryptedFilePath = '${directory.path}/$fileName';
+
+      await Dio().download(url, encryptedFilePath);
+
+      String encryptedBase64 = await File(encryptedFilePath).readAsString();
+
+      List<int> encryptedBytes = base64Decode(encryptedBase64);
+
+      List<int> decryptedBytes = await CrpytoUtils.decryptBytes(encryptedBytes);
+
+      File decryptedFile = File(decryptedFilePath);
+      await decryptedFile.writeAsBytes(decryptedBytes);
+
+      await File(encryptedFilePath).delete();
+
+      Get.snackbar('Download Complete', 'File saved to $decryptedFilePath');
+    } catch (e) {
+      Get.snackbar('Error', 'Failed to download or decrypt file');
     }
   }
 }

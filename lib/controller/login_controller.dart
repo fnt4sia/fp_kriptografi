@@ -10,19 +10,6 @@ class LoginController extends GetxController {
       TextEditingController().obs;
   final isPassword = true.obs;
 
-  @override
-  void onInit() async {
-    super.onInit();
-    checkUserLoggedIn();
-  }
-
-  void checkUserLoggedIn() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? userId = prefs.getString('userId');
-    if (userId != null) {
-      Get.offAllNamed('/home');
-    }
-  }
 
   Future<void> tryLogin() async {
     String? userId = await LoginRegisterUtils.tryLogin(

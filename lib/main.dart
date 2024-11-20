@@ -20,7 +20,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       getPages: AppRoutes.routes,
-      initialRoute: '/login',
+      initialRoute: '/splash',
       debugShowCheckedModeBanner: false,
     );
   }

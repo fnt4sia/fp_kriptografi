@@ -9,6 +9,7 @@ class ChatPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final ChatController controller = Get.put(ChatController());
     return Scaffold(
+      backgroundColor: const Color(0xffD0E8C5),
       appBar: AppBar(
         title: Obx(
           () => Text(
@@ -50,7 +51,6 @@ class ChatPage extends StatelessWidget {
                     final message = controller.messages[index];
                     final isCurrentUser =
                         message['senderId'] == controller.currentUserId;
-                    final isImage = message['type'] == 'image';
 
                     return Align(
                       alignment: isCurrentUser
@@ -75,62 +75,94 @@ class ChatPage extends StatelessWidget {
                                 : const Radius.circular(8.0),
                           ),
                         ),
-                        child: isImage
-                            ? GestureDetector(
-                                onTap: () async {
-                                  BuildContext dialogContext = context;
-
-                                  String hiddenMessage = '';
-                                  if (message['hasMessage']) {
-                                    hiddenMessage = await controller
-                                        .receiveImage(message['content']);
-                                  }
-
-                                  if (!dialogContext.mounted) return;
-
-                                  showDialog(
-                                    context: dialogContext,
-                                    builder: (BuildContext context) {
-                                      return Dialog(
-                                        child: SingleChildScrollView(
-                                          child: Column(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Image.network(
-                                                message['content'],
-                                                fit: BoxFit.contain,
-                                              ),
-                                              if (message['hasMessage'] &&
-                                                  hiddenMessage.isNotEmpty)
-                                                Padding(
-                                                  padding:
-                                                      const EdgeInsets.all(8.0),
-                                                  child: Text(hiddenMessage),
-                                                ),
-                                            ],
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                  );
-                                },
-                                child: Image.network(
-                                  message['content'],
-                                  width: 150,
-                                  height: 150,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return const Icon(
-                                      Icons.broken_image,
-                                      size: 50,
-                                    );
-                                  },
-                                ),
-                              )
-                            : Text(
+                        child: message['type'] == 'text'
+                            ? Text(
                                 message['content'],
                                 style: const TextStyle(fontSize: 16),
-                              ),
+                              )
+                            : message['type'] == 'image'
+                                ? GestureDetector(
+                                    onTap: () async {
+                                      String hiddenMessage = '';
+                                      if (message['hasMessage'] == true) {
+                                        hiddenMessage = await controller
+                                            .receiveImage(message['content']);
+                                      }
+                                      if (!context.mounted) return;
+                                      showDialog(
+                                        context: context,
+                                        builder: (BuildContext context) {
+                                          return Dialog(
+                                            child: SingleChildScrollView(
+                                              child: Column(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Image.network(
+                                                    message['content'],
+                                                    fit: BoxFit.contain,
+                                                  ),
+                                                  if (message['hasMessage'] ==
+                                                          true &&
+                                                      hiddenMessage.isNotEmpty)
+                                                    Padding(
+                                                      padding:
+                                                          const EdgeInsets.all(
+                                                              8.0),
+                                                      child: Text(
+                                                        hiddenMessage,
+                                                        style: const TextStyle(
+                                                            fontSize: 16),
+                                                      ),
+                                                    ),
+                                                ],
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                      );
+                                    },
+                                    child: Image.network(
+                                      message['content'],
+                                      width: 150,
+                                      height: 150,
+                                      fit: BoxFit.cover,
+                                      errorBuilder:
+                                          (context, error, stackTrace) {
+                                        return const Icon(
+                                          Icons.broken_image,
+                                          size: 50,
+                                        );
+                                      },
+                                    ),
+                                  )
+                                : message['type'] == 'file'
+                                    ? Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            message['fileName'] ??
+                                                'Unknown File',
+                                            style: const TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                            maxLines: 1,
+                                          ),
+                                          const SizedBox(height: 5),
+                                          ElevatedButton.icon(
+                                            onPressed: () async {
+                                              await controller.downloadFile(
+                                                message['content'],
+                                                message['fileName'],
+                                              );
+                                            },
+                                            icon: const Icon(Icons.download),
+                                            label: const Text('Download'),
+                                          ),
+                                        ],
+                                      )
+                                    : const SizedBox(),
                       ),
                     );
                   },

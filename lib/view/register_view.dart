@@ -27,7 +27,7 @@ class RegisterPage extends StatelessWidget {
                 const Text(
                   'Welcome \n Maidenless Tarnished',
                   style: TextStyle(
-                    fontSize: 22,
+                    fontSize: 24,
                     fontWeight: FontWeight.bold,
                   ),
                   textAlign: TextAlign.center,

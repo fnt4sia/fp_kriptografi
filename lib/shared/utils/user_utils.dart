@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:fp_kriptografi/shared/utils/crpyto_utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class UserUtils {
@@ -48,6 +49,7 @@ class UserUtils {
       String lastMessage = '';
       if (chatDoc.exists) {
         lastMessage = chatDoc['lastMessage'] ?? '';
+        lastMessage = CrpytoUtils.superCipher(lastMessage, false);
       }
 
       contacts.add({

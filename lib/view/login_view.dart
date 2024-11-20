@@ -24,7 +24,7 @@ class LoginPage extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const Text(
-                  'Welcome \n Foul Tarnished',
+                  'Welcome \n Maidenless Tarnished',
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,

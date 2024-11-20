@@ -9,12 +9,12 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     final HomeController controller = Get.put(HomeController());
     return Scaffold(
+      backgroundColor: const Color(0xffD0E8C5),
       appBar: AppBar(
         title: const Text(
           "Kripto F nya Fitra",
           style: TextStyle(
-            color: Colors.white,
-          ),
+              color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
         ),
         backgroundColor: Colors.teal,
         automaticallyImplyLeading: false,

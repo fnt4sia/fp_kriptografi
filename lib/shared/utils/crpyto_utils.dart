@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:encrypt/encrypt.dart';
 import 'package:image/image.dart' as img;
 import 'package:path_provider/path_provider.dart';
@@ -122,9 +123,98 @@ class CrpytoUtils {
       String secretMessage = utf8.decode(secretBytes);
       return secretMessage;
     } catch (e) {
-      print("error disini bang : extract data from image");
-      print(e.toString());
       return null;
+    }
+  }
+
+  static List<int> encryptByes(List<int> bytes) {
+    final e = Encrypter(AES(key, mode: AESMode.cbc));
+    final encryptedData = e.encryptBytes(bytes, iv: iv);
+    return encryptedData.bytes;
+  }
+
+  static Future<List<int>> decryptBytes(List<int> encryptedBytes) async {
+    final encrypter = Encrypter(AES(key, mode: AESMode.cbc));
+
+    final decryptedBytes = encrypter.decryptBytes(
+      Encrypted(Uint8List.fromList(encryptedBytes)),
+      iv: iv,
+    );
+
+    return decryptedBytes;
+  }
+
+  static String caesarCipher(String text, bool isEncrypt) {
+    const int asciiLowerA = 97;
+    const int asciiLowerZ = 122;
+    const int asciiUpperA = 65;
+    const int asciiUpperZ = 90;
+
+    int shift = 3;
+    shift = isEncrypt ? shift : -shift;
+
+    String resultText = '';
+
+    for (int i = 0; i < text.length; i++) {
+      int charCode = text.codeUnitAt(i);
+
+      if (charCode >= asciiUpperA && charCode <= asciiUpperZ) {
+        charCode = ((charCode - asciiUpperA + shift) % 26);
+        if (charCode < 0) charCode += 26;
+        charCode += asciiUpperA;
+      } else if (charCode >= asciiLowerA && charCode <= asciiLowerZ) {
+        charCode = ((charCode - asciiLowerA + shift) % 26);
+        if (charCode < 0) charCode += 26;
+        charCode += asciiLowerA;
+      }
+
+      resultText += String.fromCharCode(charCode);
+    }
+
+    return resultText;
+  }
+
+  static String vigenereCipher(String text, bool isEncrypt) {
+    String key = 'SECRET';
+    key = key.toUpperCase();
+    String result = '';
+    int keyIndex = 0;
+
+    for (int i = 0; i < text.length; i++) {
+      String char = text[i];
+      if (RegExp(r'[a-zA-Z]').hasMatch(char)) {
+        int charCode = char.toUpperCase().codeUnitAt(0) - 65;
+        int keyCode = key[keyIndex % key.length].codeUnitAt(0) - 65;
+        int shift = isEncrypt ? keyCode : -keyCode;
+        int newCharCode = (charCode + shift) % 26;
+        if (newCharCode < 0) newCharCode += 26;
+        result += String.fromCharCode(
+            newCharCode + (char == char.toUpperCase() ? 65 : 97));
+        keyIndex++;
+      } else {
+        result += char;
+      }
+    }
+
+    return result;
+  }
+
+  static String xorCipher(String text) {
+    int key = 42;
+    return String.fromCharCodes(text.codeUnits.map((unit) => unit ^ key));
+  }
+
+  static String superCipher(String text, bool isEncrypt) {
+    if (isEncrypt) {
+      String caesarText = caesarCipher(text, true);
+      String vigenereText = vigenereCipher(caesarText, true);
+      String result = xorCipher(vigenereText);
+      return result;
+    } else {
+      String xorText = xorCipher(text);
+      String vigenereText = vigenereCipher(xorText, false);
+      String result = caesarCipher(vigenereText, false);
+      return result;
     }
   }
 }
