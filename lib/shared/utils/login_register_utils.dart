@@ -21,12 +21,11 @@ class LoginRegisterUtils {
             .delete();
       }
 
-      final List<dynamic> newPass = CrpytoUtils.encPass(password);
+      String hashedPassword = CrpytoUtils.hashPassword(password);
 
       await firestore.collection('account').add({
         "email": email,
-        "password": newPass[0],
-        "iv": newPass[1],
+        "password": hashedPassword,
         "username": username,
       });
 
@@ -44,20 +43,20 @@ class LoginRegisterUtils {
           .get();
 
       if (snapshot.docs.isEmpty) {
-        return null; 
+        return null;
       }
 
       final userDoc = snapshot.docs.first;
-      final encryptedPassword = userDoc['password'];
-      final iv = userDoc['iv'];
+      final hashedPassword = userDoc['password'];
 
-      final decryptedPassword = CrpytoUtils.decPass([encryptedPassword, iv]);
+      bool isPasswordValid =
+          CrpytoUtils.verifyPassword(password, hashedPassword);
 
-      if (decryptedPassword == password) {
-        return userDoc.id; 
+      if (isPasswordValid) {
+        return userDoc.id;
       }
 
-      return null; 
+      return null;
     } catch (e) {
       return null;
     }

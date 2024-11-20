@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:bcrypt/bcrypt.dart';
 import 'package:encrypt/encrypt.dart';
 import 'package:image/image.dart' as img;
 import 'package:path_provider/path_provider.dart';
@@ -9,18 +10,13 @@ class CrpytoUtils {
   static final key = Key.fromUtf8('inibutuh32karakterjadinyangasall');
   static final iv = IV.fromSecureRandom(16);
 
-  static List encPass(String text) {
-    final e = Encrypter(AES(key, mode: AESMode.cbc));
-    final encryptedData = e.encrypt(text, iv: iv);
-    return [encryptedData.base64, iv.base64];
+  static String hashPassword(String password) {
+    String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt());
+    return hashedPassword;
   }
 
-  static String decPass(List<String> encryptedDataAndIv) {
-    final e = Encrypter(AES(key, mode: AESMode.cbc));
-    final iv = IV.fromBase64(encryptedDataAndIv[1]);
-    final encryptedData = Encrypted.fromBase64(encryptedDataAndIv[0]);
-    final decryptedData = e.decrypt(encryptedData, iv: iv);
-    return decryptedData;
+  static bool verifyPassword(String password, String hashedPassword) {
+    return BCrypt.checkpw(password, hashedPassword);
   }
 
   static Future<File> hideDataInImage(
